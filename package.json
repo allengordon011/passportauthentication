@@ -1,7 +1,6 @@
 {
   "name": "passportauthentication",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -15,5 +14,14 @@
     "mongoose": "^4.7.0",
     "passport": "^0.3.2",
     "passport-http": "^0.3.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trig0/passportauthentication.git"
+  },
+  "bugs": {
+    "url": "https://github.com/trig0/passportauthentication/issues"
+  },
+  "homepage": "https://github.com/trig0/passportauthentication#readme",
+  "description": ""
 }

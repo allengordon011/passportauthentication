@@ -2,10 +2,55 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var User = require('./user-model');
+var bcrypt = require('bcryptjs');
 
 var app = express();
 
 var jsonParser = bodyParser.json();
+
+var passport = require('passport');
+var BasicStrategy = require('passport-http').BasicStrategy;
+
+var strategy = new BasicStrategy(function(username, password, callback) {
+    User.findOne({
+        username: username
+    }, function(err, user) {
+        if (err) {
+            callback(err);
+            return;
+        }
+        if (!user) {
+            return callback(null, false, {
+                message: 'Incorrect username.'
+            });
+        }
+        console.log('user: ' + user);
+        user.validatePassword(password, function(err, isValid) {
+            if (err) {
+                console.log('the error', err);
+                return callback(err);
+            }
+            if (!isValid) {
+                return callback(null, false, {
+                    message: 'Incorrect password.'
+                });
+            }
+            return callback(null, user);
+        });
+    });
+});
+
+passport.use(strategy);
+
+app.use(passport.initialize());
+
+app.get('/hidden', passport.authenticate('basic', {
+    session: false
+}), function(req, res) {
+    res.json({
+        message: 'Luke... I am your father.'
+    });
+});
 
 app.post('/users', jsonParser, function(req, res) {
     if (!req.body) {
@@ -58,23 +103,55 @@ app.post('/users', jsonParser, function(req, res) {
         });
     }
 
-    var user = new User({
-        username: username,
-        password: password
-    });
+    // var user = new User({
+    //     username: username,
+    //     password: password
+    // });
 
-    user.save(function(err) {
+    // user.save(function(err) {
+    //     if (err) {
+    //         return res.status(500).json({
+    //             message: 'Internal server error'
+    //         });
+    //     }
+
+    //     return res.status(201).json({});
+    // });
+
+    bcrypt.genSalt(10, function(err, salt) {
         if (err) {
             return res.status(500).json({
                 message: 'Internal server error'
             });
         }
 
-        return res.status(201).json({});
+        bcrypt.hash(password, salt, function(err, hash) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Internal server error'
+                });
+            }
+
+            var user = new User({
+                username: username,
+                password: hash
+            });
+
+            user.save(function(err) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Internal server error'
+                    });
+                }
+
+                return res.status(201).json({});
+            });
+        });
     });
+
 });
 
-mongoose.connect('mongodb:passport:passport@ds111798.mlab.com:11798/passportauthentication').then(function() {
+mongoose.connect('mongodb://passport:passport@ds111798.mlab.com:11798/passportauthentication').then(function() {
     console.log('Listen on port, yay!');
     app.listen(process.env.PORT || 8080);
 });
